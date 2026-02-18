@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maps - Transportasi Jakarta</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Navigasi Utama">
+        <a href="home.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="maps.html" class="active">Map</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Maps</h1>
+
+      <section aria-labelledby="filter-heading" class="filter-section">
+        <h2 id="filter-heading">Filter</h2>
+        <fieldset>
+          <legend class="visually-hidden">Filter Transportasi</legend>
+          <label>
+            <input type="checkbox" id="filter-tj" checked />
+            TJ (Biru)
+          </label>
+          <label>
+            <input type="checkbox" id="filter-mrt" checked />
+            MRT (Merah)
+          </label>
+          <label>
+            <input type="checkbox" id="filter-lrt" checked />
+            LRT (Hijau)
+          </label>
+          <label>
+            <input type="checkbox" id="filter-krl" checked />
+            KRL (Hitam-Putih)
+          </label>
+        </fieldset>
+      </section>
+
+      <section aria-labelledby="map-heading">
+        <h2 id="map-heading" class="visually-hidden">Peta Transportasi</h2>
+        <div
+          id="map"
+          role="application"
+          aria-label="Peta interaktif transportasi Jakarta"
+        ></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>v.x.x.x © Copyright 2026 VO</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/script.js"></script>
+  </body>
+</html>
