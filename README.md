@@ -63,4 +63,4 @@ http://localhost
 - Instagram: [https://www.instagram.com/fauzhan_nr/]
 - LinkedIn: [https://www.linkedin.com/in/fauzan-nurrachman-75655b90/]
 - 📄 Lisensi
-  Fauzan Nurrachman &copy; 2026 VO - All Rights Reserved
+  - &copy; 2026 Fauzan Nurrachman - All Rights Reserved
