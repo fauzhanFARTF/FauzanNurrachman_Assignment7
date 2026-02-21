@@ -62,5 +62,5 @@ http://localhost
 - GIS Specialist & Developer
 - Instagram: [https://www.instagram.com/fauzhan_nr/]
 - LinkedIn: [https://www.linkedin.com/in/fauzan-nurrachman-75655b90/]
-  📄 Lisensi
-  © 2026 VO - All Rights Reserved
+- 📄 Lisensi
+  Fauzan Nurrachman &copy; 2026 VO - All Rights Reserved
