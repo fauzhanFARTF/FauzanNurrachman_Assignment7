@@ -56,6 +56,17 @@ git clone https://github.com/fauzhanFARTF/FauzanNurrachman_Assignment7.git
 http://localhost
 ```
 
+## 🖼️ Screenshots
+
+Halaman Home
+![Logo Aplikasi](assets/images/Home-Transportasi-Jakarta-02-21-2026_09_17_AM.png)
+
+Halaman About
+![Logo Aplikasi](assets/images/About-Transportasi-Jakarta-02-21-2026_09_18_AM.png)
+
+Halaman Maps
+![Logo Aplikasi](assets/images/Maps-Transportasi-Jakarta-02-21-2026_09_18_AM.png)
+
 ## 👤 Developer
 
 - Fauzan Nurrachman
