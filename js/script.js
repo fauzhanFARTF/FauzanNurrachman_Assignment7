@@ -1,6 +1,7 @@
 /**
  * Script untuk Peta Transportasi Jakarta
  * Menggunakan Leaflet.js untuk menampilkan peta interaktif
+ * Fokus area: DKI Jakarta
  */
 
 // ========================================
@@ -30,21 +31,106 @@ const ROUTE_CONFIG = {
 };
 
 // ========================================
+// BOUNDING BOX DKI JAKARTA
+// ========================================
+const JAKARTA_BOUNDS = {
+  south: -6.3751,
+  north: -6.0844,
+  west: 106.6294,
+  east: 106.9758,
+};
+
+// ========================================
+// CENTER & DEFAULT ZOOM JAKARTA
+// ========================================
+const JAKARTA_CENTER = [-6.2088, 106.8456];
+const DEFAULT_ZOOM = 11;
+const MIN_ZOOM = 10;
+const MAX_ZOOM = 16;
+
+// ========================================
 // INISIALISASI PETA
 // ========================================
-const map = L.map('map').setView([-6.2088, 106.8456], 12);
+const map = L.map('map', {
+  center: JAKARTA_CENTER,
+  zoom: DEFAULT_ZOOM,
+  minZoom: MIN_ZOOM,
+  maxZoom: MAX_ZOOM,
+  maxBounds: [
+    [JAKARTA_BOUNDS.south - 0.1, JAKARTA_BOUNDS.west - 0.1],
+    [JAKARTA_BOUNDS.north + 0.1, JAKARTA_BOUNDS.east + 0.1],
+  ],
+  maxBoundsViscosity: 0.8,
+});
 
 // Tambah tile layer OpenStreetMap
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution:
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  maxZoom: 18,
+  maxZoom: 19,
 }).addTo(map);
 
 // ========================================
 // PENYIMPANAN LAYER
 // ========================================
 const layers = {};
+
+// ========================================
+// FUNGSI CEK KOORDINAT DALAM JAKARTA
+// ========================================
+function isPointInJakarta(lat, lng) {
+  return (
+    lat >= JAKARTA_BOUNDS.south &&
+    lat <= JAKARTA_BOUNDS.north &&
+    lng >= JAKARTA_BOUNDS.west &&
+    lng <= JAKARTA_BOUNDS.east
+  );
+}
+
+// ========================================
+// FUNGSI FILTER GEOJSON BY BOUNDS
+// ========================================
+function filterGeoJSONByBounds(geojson) {
+  if (!geojson || !geojson.features)
+    return { type: 'FeatureCollection', features: [] };
+
+  return {
+    type: 'FeatureCollection',
+    features: geojson.features.filter((feature) => {
+      if (!feature.geometry) return false;
+
+      const geom = feature.geometry;
+
+      if (geom.type === 'LineString') {
+        return geom.coordinates.some(([lng, lat]) =>
+          isPointInJakarta(lat, lng),
+        );
+      }
+
+      if (geom.type === 'MultiLineString') {
+        return geom.coordinates.some((line) =>
+          line.some(([lng, lat]) => isPointInJakarta(lat, lng)),
+        );
+      }
+
+      if (geom.type === 'Point') {
+        const [lng, lat] = geom.coordinates;
+        return isPointInJakarta(lat, lng);
+      }
+
+      if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
+        // Cek bounding box polygon
+        const coords =
+          geom.type === 'Polygon'
+            ? geom.coordinates[0]
+            : geom.coordinates[0][0];
+        return coords.some(([lng, lat]) => isPointInJakarta(lat, lng));
+      }
+
+      return false;
+    }),
+  };
+}
 
 // ========================================
 // FUNGSI LOAD GEOJSON LOKAL
@@ -80,7 +166,7 @@ async function loadLocalGeoJSON(type, filename) {
 }
 
 // ========================================
-// FUNGSI LOAD KRL DARI API
+// FUNGSI LOAD KRL DARI API (FOKUS JAKARTA)
 // ========================================
 async function loadKRLFromAPI() {
   try {
@@ -95,7 +181,15 @@ async function loadKRLFromAPI() {
 
     const data = await response.json();
 
-    layers.krl = L.geoJSON(data, {
+    // Filter data hanya untuk area Jakarta
+    const jakartaData = filterGeoJSONByBounds(data);
+
+    if (jakartaData.features.length === 0) {
+      console.warn('⚠️ No KRL data found within Jakarta bounds');
+      return;
+    }
+
+    layers.krl = L.geoJSON(jakartaData, {
       style: {
         color: ROUTE_CONFIG.krl.color,
         weight: 4,
@@ -104,9 +198,41 @@ async function loadKRLFromAPI() {
       },
     }).addTo(map);
 
-    console.log('✅ Loaded: KRL from API');
+    console.log(
+      `✅ Loaded: ${jakartaData.features.length} KRL features in Jakarta`,
+    );
   } catch (error) {
     console.warn('⚠️ Could not load KRL from API:', error.message);
+  }
+}
+
+// ========================================
+// FUNGSI FIT BOUNDS DENGAN BATASAN
+// ========================================
+function fitMapToBounds(layers) {
+  const allLayers = Object.values(layers).filter((layer) => layer);
+
+  if (allLayers.length === 0) {
+    map.setView(JAKARTA_CENTER, DEFAULT_ZOOM);
+    return;
+  }
+
+  const group = L.featureGroup(allLayers);
+  const bounds = group.getBounds();
+
+  // Hitung span bounds
+  const latSpan = bounds.getNorth() - bounds.getSouth();
+  const lngSpan = bounds.getEast() - bounds.getWest();
+
+  // Jika bounds terlalu luas (lebih dari area Jakarta), gunakan default view
+  if (latSpan > 0.5 || lngSpan > 0.5) {
+    map.setView(JAKARTA_CENTER, DEFAULT_ZOOM);
+  } else {
+    // Fit bounds dengan padding, tapi batasi zoom level
+    map.fitBounds(bounds.pad(0.1), {
+      maxZoom: 14,
+      minZoom: MIN_ZOOM,
+    });
   }
 }
 
@@ -123,7 +249,6 @@ function setupFilter(filterId, layerType) {
       if (layers[layerType]) {
         map.addLayer(layers[layerType]);
 
-        // Pastikan TJ tetap di bawah
         if (layerType === 'tj') {
           layers[layerType].eachLayer((layer) => layer.bringToBack());
         }
@@ -155,13 +280,8 @@ async function init() {
     layers.tj.eachLayer((layer) => layer.bringToBack());
   }
 
-  // Fit bounds untuk menampilkan semua rute
-  const allLayers = Object.values(layers).filter((layer) => layer);
-
-  if (allLayers.length > 0) {
-    const group = L.featureGroup(allLayers);
-    map.fitBounds(group.getBounds().pad(0.1));
-  }
+  // Fit bounds dengan batasan zoom Jakarta
+  fitMapToBounds(layers);
 
   // Setup filter controls
   setupFilter('filter-tj', 'tj');
